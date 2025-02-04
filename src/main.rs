@@ -2,7 +2,6 @@
 use axum::{
     routing::{get, post},
     Router,
-    response::{Html, IntoResponse},
     extract::Json,
 };
 use serde::Deserialize;
