@@ -1,14 +1,48 @@
+
 use axum::{
-    routing::get,
+    routing::{get, post},
     Router,
+    response::{Html, IntoResponse},
+    extract::Json,
 };
+use serde::Deserialize;
+use std::net::SocketAddr;
+use tokio::net::TcpListener;
+use serde_json::json;
 
 #[tokio::main]
 async fn main() {
-    // build our application with a single route
-    let app = Router::new().route("/", get(|| async { "Hello, World!" }));
+    // Define the router with routes
+    let app = Router::new()
+        .route("/", get(|| async { "Hello, World!" }))
+        .route("/api/v1/signup", post(signup))
+        .route("/isAlive", get(is_alive));
 
-    // run our app with hyper, listening globally on port 3000
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:8009").await.unwrap();
+    // Bind the listener
+    let addr = "127.0.0.1:8009".parse::<SocketAddr>().unwrap();
+    let listener = TcpListener::bind(addr).await.unwrap();
+    println!("🚀 Server running at http://{}", addr);
+
+    // Start the Axum server
     axum::serve(listener, app).await.unwrap();
+}
+
+// Define a struct to extract JSON data from the request body
+#[derive(Deserialize)]
+struct SignupData {
+    username: String,
+    password: String,
+}
+
+async fn is_alive() -> Json<serde_json::Value> {
+    Json(json!({
+        "database": "on",
+        "server": "on"
+    }))
+}
+
+// Corrected signup function
+async fn signup(Json(data): Json<SignupData>) -> &'static str {
+    println!("Received signup request: username={}, password={}", data.username, data.password);
+    "Signup successful"
 }
